@@ -13,5 +13,5 @@ data.dir <- file.path(data.root, "data")
 
 stopifnot(dir.exists(src) & dir.exists(aux.dir))
 
-create.proj(research=T,training=T,production=F,portable=F)
+# create.proj(research=T,training=T,production=F,portable=F)
 options(scipen=999, digits = 9, stringsAsFactors = F)
