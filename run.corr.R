@@ -1,6 +1,6 @@
 source("dirs.R")
-source("../auxiliary/mylib.R")
-mylib(c("data.table", "magrittr", "summarytools", "ggplot2"))
+source(file.path(aux.dir, "mylib.R"))
+mylib(c("data.table", "magrittr", "corrplot"))
 load(file.path(data.dir, "data.RData"))
 
 TBN_CIF <- na.omit(TBN_CIF)

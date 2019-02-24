@@ -1,5 +1,5 @@
 source("dirs.R")
-source("../auxiliary/mylib.R")
+source(file.path(aux.dir, "mylib.R"))
 mylib(c("data.table", "magrittr", "summarytools", "ggplot2"))
 load(file.path(data.dir, "data.RData"))
 
