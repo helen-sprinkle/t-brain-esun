@@ -6,7 +6,8 @@
 # [data.dir] data read-in directory
 
 wd <- "."
-src <- ifelse(grepl("[Hh]elen", Sys.info()["nodename"]), wd, "src")
+# src <- ifelse(grepl("[Hh]elen", Sys.info()["user"]), wd, "src")
+src <- wd
 aux.dir <- "../auxiliary"
 data.root <- file.path("../../data", basename(getwd()))
 data.dir <- file.path(data.root, "data")
