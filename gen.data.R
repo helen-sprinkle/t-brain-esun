@@ -76,7 +76,7 @@ output.fnm <- "y.train%s.test%s.roll%s.RData"
 # x.st---train.interval---x.ed
 #                         y.st---test.interval---y.ed
 st.int <- 9448
-train.interval <- 30
+train.interval <- 30 # c(30, 60, 90)
 test.interval <- 30
 rolling.interval <- 30
 ed.int <- st.int + 120
