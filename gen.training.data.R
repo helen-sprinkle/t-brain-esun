@@ -6,6 +6,11 @@ mylib(c("data.table", "magrittr", "Matrix", "mltools", "xgboost"))
 #                    "TBN_CC_APPLY","TBN_LN_APPLY","TBN_FX_TXN","TBN_WM_TXN"
 load(file.path(data.dir, "data.RData"))
 
+# sparse matrix
+# https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/sparsify
+# https://www.kaggle.com/cartographic/data-table-to-sparsematrix
+# https://github.com/dmlc/xgboost/blob/master/R-package/demo/create_sparse_matrix.R
+
 for (train.interval in c(30, 60, 90)) {
     # - label data: "y.cc", "y.fx", "y.ln", "y.wm", "x.date.list", "y.date.list"
     in.fnm <-  sprintf("y.train%s.test30.roll30.RData", train.interval)
