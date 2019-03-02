@@ -76,52 +76,79 @@ output.fnm <- "y.train%s.test%s.roll%s.RData"
 # x.st---train.interval---x.ed
 #                         y.st---test.interval---y.ed
 st.int <- 9448
-train.interval <- 30 # c(30, 60, 90)
+# train.interval <- 30 # c(30, 60, 90)
 test.interval <- 30
 rolling.interval <- 30
 ed.int <- st.int + 120
-ed.x.int <- ed.int - test.interval - train.interval
-
-x.st.ls <- seq(st.int, ed.x.int, by = rolling.interval)
-mid.ls <- x.st.ls + train.interval
-y.ed.ls <- mid.ls + test.interval
-
-dt <- expand.grid(st.date=x.st.ls, date=st.int:ed.int) %>% data.table()
-dt[, ed.date:=st.date+train.interval]
-x.date.list <- dt[date>=st.date&date<ed.date]
-setnames(x.date.list, c("st.date","date", "ed.date"), c("st.date", "all.date", "date"))
-dt <- expand.grid(st.date=mid.ls, date=st.int:ed.int) %>% data.table()
-dt[, ed.date:=st.date+test.interval]
-y.date.list <- dt[date>=st.date&date<ed.date]
-setnames(y.date.list, c("st.date","date", "ed.date"), c("date", "all.date", "ed.date"))
-
-# y.cc
-TBN_CC_APPLY <- TBN_CC_APPLY[,.N, by=.(CUST_NO, TXN_DT)]
-dt2 <- TBN_CC_APPLY[y.date.list, on = c("TXN_DT"="all.date")]
-dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
-dt3[,Y:=1]
-dt4 <- dt3[date!=st.int]
-y.cc <- dt4
-# y.fx
-TBN_FX_TXN <- TBN_FX_TXN[,.N, by=.(CUST_NO, TXN_DT)]
-dt2 <- TBN_FX_TXN[y.date.list, on = c("TXN_DT"="all.date")]
-dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
-dt3[,Y:=1]
-dt4 <- dt3[date!=st.int]
-y.fx <- dt4
-# y.ln
-TBN_LN_APPLY <- TBN_LN_APPLY[,.N, by=.(CUST_NO, TXN_DT)]
-dt2 <- TBN_LN_APPLY[y.date.list, on = c("TXN_DT"="all.date")]
-dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
-dt3[,Y:=1]
-dt4 <- dt3[date!=st.int]
-y.ln <- dt4
-# y.wm
-TBN_WM_TXN <- TBN_WM_TXN[,.N, by=.(CUST_NO, TXN_DT)]
-dt2 <- TBN_WM_TXN[y.date.list, on = c("TXN_DT"="all.date")]
-dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
-dt3[,Y:=1]
-dt4 <- dt3[date!=st.int]
-y.wm <- dt4
-save(list = c("y.cc", "y.fx", "y.ln", "y.wm", "x.date.list","y.date.list"), 
-     file=file.path(data.dir, sprintf(output.fnm, train.interval, test.interval, rolling.interval)))
+for (train.interval in c(30, 60, 90)) {
+    ed.x.int <- ed.int - test.interval - train.interval
+    
+    x.st.ls <- seq(st.int, ed.x.int, by = rolling.interval)
+    mid.ls <- x.st.ls + train.interval
+    y.ed.ls <- mid.ls + test.interval
+    
+    dt <- expand.grid(st.date=x.st.ls, date=st.int:ed.int) %>% data.table()
+    dt[, ed.date:=st.date+train.interval]
+    x.date.list <- dt[date>=st.date&date<ed.date]
+    setnames(x.date.list, c("st.date","date", "ed.date"), c("st.date", "all.date", "date"))
+    dt <- expand.grid(st.date=mid.ls, date=st.int:ed.int) %>% data.table()
+    dt[, ed.date:=st.date+test.interval]
+    y.date.list <- dt[date>=st.date&date<ed.date]
+    setnames(y.date.list, c("st.date","date", "ed.date"), c("date", "all.date", "ed.date"))
+    
+    # y.cc
+    TBN_CC_APPLY <- TBN_CC_APPLY[,.N, by=.(CUST_NO, TXN_DT)]
+    dt2 <- TBN_CC_APPLY[y.date.list, on = c("TXN_DT"="all.date")]
+    dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
+    dt3[,Y:=1]
+    dt4 <- dt3[date!=st.int]
+    dt4 <- na.omit(dt4)
+    y.cc <- dt4
+    # y.fx
+    TBN_FX_TXN <- TBN_FX_TXN[,.N, by=.(CUST_NO, TXN_DT)]
+    dt2 <- TBN_FX_TXN[y.date.list, on = c("TXN_DT"="all.date")]
+    dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
+    dt3[,Y:=1]
+    dt4 <- dt3[date!=st.int]
+    dt4 <- na.omit(dt4)
+    y.fx <- dt4
+    # y.ln
+    TBN_LN_APPLY <- TBN_LN_APPLY[,.N, by=.(CUST_NO, TXN_DT)]
+    dt2 <- TBN_LN_APPLY[y.date.list, on = c("TXN_DT"="all.date")]
+    dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
+    dt3[,Y:=1]
+    dt4 <- dt3[date!=st.int]
+    dt4 <- na.omit(dt4)
+    y.ln <- dt4
+    # y.wm
+    TBN_WM_TXN <- TBN_WM_TXN[,.N, by=.(CUST_NO, TXN_DT)]
+    dt2 <- TBN_WM_TXN[y.date.list, on = c("TXN_DT"="all.date")]
+    dt3 <- dt2[, .(n=sum(N)), by = .(CUST_NO, date)]
+    dt3[,Y:=1]
+    dt4 <- dt3[date!=st.int]
+    dt4 <- na.omit(dt4)
+    y.wm <- dt4
+    #!!! if (train.interval==60) {
+    if (!((train.interval==30&rolling.interval==30)|(train.interval==90))) {
+        y.cc.raw <- y.cc
+        y.fx.raw <- y.fx
+        y.ln.raw <- y.ln
+        y.wm.raw <- y.wm
+        x.date.list.raw <- x.date.list
+        y.date.list.raw <- y.date.list
+        for (i.date in unique(x.date.list$date)) {
+            y.cc <- y.cc.raw[date==i.date]
+            y.fx <- y.fx.raw[date==i.date]
+            y.ln <- y.ln.raw[date==i.date]
+            y.wm <- y.wm.raw[date==i.date]
+            x.date.list <- x.date.list.raw[date==i.date]
+            y.date.list <- y.date.list.raw[date==i.date]
+            output.fnm1 <- "y.train%s.test%s.roll%s-%s.RData"
+            save(list = c("y.cc", "y.fx", "y.ln", "y.wm", "x.date.list","y.date.list"), 
+                 file=file.path(data.dir, sprintf(output.fnm1, train.interval, test.interval, rolling.interval, i.date)))
+        }
+    } else {
+        save(list = c("y.cc", "y.fx", "y.ln", "y.wm", "x.date.list","y.date.list"), 
+             file=file.path(data.dir, sprintf(output.fnm, train.interval, test.interval, rolling.interval)))
+    }
+}

@@ -13,7 +13,11 @@ for (in.fnm in fls) {
     out.tag <- tstrsplit(out.fnm, "_", keep=3:5) %>% unlist
     # ex. "y.train30.test30.roll30"
     #      to "30" (train interval)
-    out.tag[3] <- substr(out.tag[3], 8, 9)
+    string <- substr(out.tag[3], 8, 9)
+    if (string=="60") {
+        string <- paste(string, substr(out.tag[3], 25, 28), sep = "-")
+    }
+    out.tag[3] <- string
     
     x <- obj[["x"]]
     y <- obj[["y"]]
@@ -117,7 +121,7 @@ for (in.fnm in fls) {
                     # Fmeasure, learning rate, depth, subset, unbalanced
                     round(para[5],2), para[1], para[2],para[3],para[4]))
         write.table(ret_grid[test.n,], file.path(data.dir, "output",sprintf("%s_ret_grid.csv", out.fnm)),
-                  row.names = F, col.names = F, append = T, sep = ",")
+                  row.names = T, col.names = F, append = T, sep = ",")
         return(list(pred, bstSparse))
     })
     

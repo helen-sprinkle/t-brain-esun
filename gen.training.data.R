@@ -10,10 +10,9 @@ load(file.path(data.dir, "data.RData"))
 # https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/sparsify
 # https://www.kaggle.com/cartographic/data-table-to-sparsematrix
 # https://github.com/dmlc/xgboost/blob/master/R-package/demo/create_sparse_matrix.R
-
-for (train.interval in c(30, 60, 90)) {
+fls <- list.files(data.dir, "y.*.RData")
+for (in.fnm in fls) {
     # - label data: "y.cc", "y.fx", "y.ln", "y.wm", "x.date.list", "y.date.list"
-    in.fnm <-  sprintf("y.train%s.test30.roll30.RData", train.interval)
     load(file.path(data.dir, in.fnm))
     for (y.tag in c("cc", "fx", "ln", "wm")) {
         # label data----
@@ -22,22 +21,21 @@ for (train.interval in c(30, 60, 90)) {
         for (feature.tag in c("behavior", "custInfo", "recent")) {
             # feature data----
             feature.date.list <- x.date.list[, .(date, all.date)]
-            if (train.interval > 30) {
-                x.st.dt <- unique(feature.date.list$date)[1]
-                y.date <- y.date[date==x.st.dt, .(CUST_NO, date, Y)]
-                feature.date.list <- feature.date.list[date==x.st.dt, .(date, all.date)]
-            }
+
             if(feature.tag=="behavior") {
                 ## path categories (melt to long table)
                 dt.long <- TBN_CUST_BEHAVIOR[, .(CUST_NO, VISITDATE, PATH1, PATH2, PATH3, PATH4, n)] %>% 
                     melt.data.table(., id.vars = c("CUST_NO", "VISITDATE", "n"), 
                                     measure.vars = c("PATH1", "PATH2", "PATH3", "PATH4"), 
                                     variable.name = "path.level", value.name = "category")
+                all.path <- unique(dt.long$category)
                 dt.long.date <- dt.long[!is.na(category)&category!="", 
                                         .(CUST_NO, VISITDATE, category, n)][feature.date.list, on = c("VISITDATE"="all.date")][
                                             , .(n=sum(n)), by = .(CUST_NO, date, category)]
                 ### spread to every path category
                 dt.raw <- dcast(dt.long.date, CUST_NO+date~category, value.var = "n", fun.aggregate = sum)
+                zero.path <- all.path[!all.path %in% colnames(dt.raw)]
+                dt.raw[,eval(zero.path):=0]
                 dt.raw <- y.date[dt.raw, on = c("CUST_NO"="CUST_NO", "date"="date")][is.na(Y), Y:=0]
                 dt <- dt.raw[, -c("CUST_NO", "date")]
                 x <- sparsify(dt[, -c("Y")], sparsifyNAs = T)
@@ -66,26 +64,21 @@ for (train.interval in c(30, 60, 90)) {
                 setorder(dt, CUST_NO, TXN_DT, type)
                 dt.raw <- dt[feature.date.list, on = c("TXN_DT"="all.date")][, .(n=sum(n)), by=.(CUST_NO, date, type)] %>% 
                     dcast.data.table(., CUST_NO+date~type,value.var = "n")
-                # dt.raw[, colnames(dt.raw)[3:8] := lapply(.SD, function(l) {
-                #     l <- unlist(l)
-                #     l[is.na(l)] <- 0
-                #     l
-                # }), .SDcols=3:8]
                 dt.raw <- y.date[dt.raw, on = c("date","CUST_NO")][is.na(Y), Y:=0]
                 dt <- dt.raw[, -c("CUST_NO", "date")]
                 x <- sparsify(dt[, -c("Y")], sparsifyNAs = T)
             }
             out.fnm <- file.path(data.dir, "processed", sprintf("dt_x_%s_%s_%s",feature.tag, y.tag, in.fnm))
-            out.fnm1 <- file.path(data.dir, "processed", sprintf("dt.raw_x_%s_%s_%s",feature.tag, y.tag, in.fnm))
+            out.fnm1 <- file.path(data.dir, "intermediates", sprintf("dt.raw_x_%s_%s_%s",feature.tag, y.tag, in.fnm))
             # output file
             y <- dt$Y
             obj <- list(x=x, y=y)
             save(obj, file=out.fnm)
             save(dt.raw, file=out.fnm1)
-            cat(sprintf("feature:%s_y:%s_intvl:%s_done\n",feature.tag, y.tag, train.interval))
+            cat(sprintf("feature:%s_y:%s_intvl:%s_done\n",feature.tag, y.tag, in.fnm))
         }
     }
 }
-slackme("done", st.tm)
+slackme("training data done", st.tm)
 dt.raw[1:3, 1:3]
 dt.raw[, .N, by=Y]
