@@ -44,24 +44,34 @@ file.rename(output.fnm, file.path("summary_and_reports", output.fnm))
 
 
 
-
+date.list <- data.table(TXN_DT=9448:9567)
+date.holiday <- TBN_LN_APPLY[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT][date.list, on="TXN_DT"][is.na(n.cust), n.cust:=0]
+date.holiday <- date.holiday[, is.holiday:=ifelse(n.cust==0, 1, 0)][, .(TXN_DT, is.holiday)]
+save(date.holiday, file = file.path(data.dir, "date.holiday.RData"))
 
 # TBN_CC_APPLY (credit card application)
 fnm <- fls[1]
 ttl <- gsub(".csv", "", basename(fnm))
 TBN_CC_APPLY[, N:=.N, by = CUST_NO]
-setorder(TBN_CC_APPLY, CUST_NO, TXN_DT)
-TBN_CC_APPLY
-# dt1 <- TBN_CC_APPLY[N==1]
-# dt2 <- TBN_CC_APPLY[N>1]
+# cc.past <- TBN_RECENT_DT[!is.na(CC_RECENT_DT), .(CUST_NO, CC_RECENT_DT)]
+# # cc.past[, N:=.N, by=.(CUST_NO)]
+# # cc.past[N>1]
+# cc.past[, N:=0]
+# setnames(cc.past, "CC_RECENT_DT", "TXN_DT")
+# setorder(TBN_CC_APPLY, CUST_NO, TXN_DT)
+# tmp <- rbindlist(l = list(cc.past, TBN_CC_APPLY), use.names = T)
+# tmp[, n:=.N, by=.(CUST_NO)]
+# dt1 <- tmp[n==1]
+# dt2 <- tmp[n>1]
+# setorder(dt2, CUST_NO, TXN_DT)
 # dt2[, `:=` (last=shift(TXN_DT),
 #             nth=1:.N), by = CUST_NO]
 # dt2[, interval:=TXN_DT-last]
-# dt3 <- dt2[, .N, by = interval] 
+# dt3 <- dt2[, .N, by = interval]
 # setorder(dt3,interval)
 # dt3
 # hist(dt2$interval[dt2$interval!=0&!is.na(dt2$interval)], br=120, right = F)
-dt4 <- TBN_CC_APPLY[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT]
+dt4 <- TBN_CC_APPLY[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT][date.list, on="TXN_DT"][is.na(n.cust), n.cust:=0]
 p <- ggplot(dt4, aes(x = TXN_DT, y = n.cust)) + 
     geom_line() + 
     geom_point() +
@@ -87,7 +97,7 @@ TBN_FX_TXN
 # setorder(dt3,interval)
 # dt3
 # hist(dt2$interval[dt2$interval!=0&!is.na(dt2$interval)], br=120, right = F)
-dt4 <- TBN_FX_TXN[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT]
+dt4 <- TBN_FX_TXN[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT][date.list, on="TXN_DT"][is.na(n.cust), n.cust:=0]
 p <- ggplot(dt4, aes(x = TXN_DT, y = n.cust)) + 
     geom_line() + 
     geom_point() +
@@ -113,7 +123,7 @@ TBN_LN_APPLY
 # setorder(dt3,interval)
 # dt3
 # hist(dt2$interval[dt2$interval!=0&!is.na(dt2$interval)], br=120, right = F)
-dt4 <- TBN_LN_APPLY[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT]
+dt4 <- TBN_LN_APPLY[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT][date.list, on="TXN_DT"][is.na(n.cust), n.cust:=0]
 p <- ggplot(dt4, aes(x = TXN_DT, y = n.cust)) + 
     geom_line() + 
     geom_point() +
@@ -139,7 +149,7 @@ TBN_WM_TXN
 # setorder(dt3,interval)
 # dt3
 # hist(dt2$interval[dt2$interval!=0&!is.na(dt2$interval)], br=120, right = F)
-dt4 <- TBN_WM_TXN[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT]
+dt4 <- TBN_WM_TXN[, .(n.cust=uniqueN(CUST_NO)), by=TXN_DT][date.list, on="TXN_DT"][is.na(n.cust), n.cust:=0]
 p <- ggplot(dt4, aes(x = TXN_DT, y = n.cust)) + 
     geom_line() + 
     geom_point() +
