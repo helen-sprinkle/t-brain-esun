@@ -10,6 +10,8 @@ load(file.path(data.dir, "data.RData"))
 # https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/sparsify
 # https://www.kaggle.com/cartographic/data-table-to-sparsematrix
 # https://github.com/dmlc/xgboost/blob/master/R-package/demo/create_sparse_matrix.R
+
+
 fls <- list.files(data.dir, "y.*.RData")
 for (in.fnm in fls) {
     # - label data: "y.cc", "y.fx", "y.ln", "y.wm", "x.date.list", "y.date.list"
@@ -21,7 +23,7 @@ for (in.fnm in fls) {
         for (feature.tag in c("behavior", "custInfo", "recent")) {
             # feature data----
             feature.date.list <- x.date.list[, .(date, all.date)]
-
+            
             if(feature.tag=="behavior") {
                 ## path categories (melt to long table)
                 dt.long <- TBN_CUST_BEHAVIOR[, .(CUST_NO, VISITDATE, PATH1, PATH2, PATH3, PATH4, n)] %>% 
@@ -41,9 +43,8 @@ for (in.fnm in fls) {
                 x <- sparsify(dt[, -c("Y")], sparsifyNAs = T)
             } else if (feature.tag=="custInfo") {
                 ## cust_info
-                TBN_CIF[is.na(TBN_CIF)] <- "Missing"
+                TBN_CIF[is.na(TBN_CIF)] <- -1
                 TBN_CIF[GENDER_CODE=="", GENDER_CODE:="Missing"]
-                TBN_CIF[, AGE:=as.character(AGE)]
                 dt.raw <- y.date[TBN_CIF, on = "CUST_NO"][is.na(Y), Y:=0]
                 dt <- dt.raw[, -c("CUST_NO", "date")]
                 x <- sparse.model.matrix(Y~.-1, data = dt)
@@ -82,3 +83,63 @@ for (in.fnm in fls) {
 slackme("training data done", st.tm)
 dt.raw[1:3, 1:3]
 dt.raw[, .N, by=Y]
+
+
+
+
+
+in.fnm <- "y.train30.test30.roll30.RData"
+feature.tag <- "bencode"
+load(file.path(data.dir, in.fnm))
+load(file.path(data.dir, "bencoder.RData"))
+
+for (y.tag in c("cc", "fx", "ln", "wm")) {
+    # label data----
+    y.date <- get(sprintf("y.%s", y.tag))
+    for (target.date in c(9478, 9508, 9538, 9568)) {
+        dt <- bencoder[date==target.date]
+        y <- y.date[date==target.date, .(CUST_NO, Y)]
+        dt.raw <- y[dt, on = 'CUST_NO']
+        dt.raw[, .N, by=Y]
+        dt.raw[is.na(Y), Y:=0]
+        dt <- dt.raw[, -c("CUST_NO", "date")]
+        y <- dt$Y
+        x <- sparsify(dt[, -c("Y")], sparsifyNAs = T)
+        out.fnm <- file.path(data.dir, "processed", sprintf("dt_%s_x_%s_%s_%s",target.date,feature.tag, y.tag, in.fnm))
+        out.fnm1 <- file.path(data.dir, "intermediates", sprintf("dt.raw_%s_x_%s_%s_%s",target.date,feature.tag, y.tag, in.fnm))
+        # output file
+        y <- dt$Y
+        obj <- list(x=x, y=y)
+        save(obj, file=out.fnm)
+        save(dt.raw, file=out.fnm1)
+        cat(sprintf("feature:%s_y:%s_intvl:%s_done\n",feature.tag, y.tag, in.fnm))
+    }
+}
+
+in.fnm <- "y.train30.test30.roll30.RData"
+load(file.path(data.dir, in.fnm))
+feature.tag <- "recent.wayback"
+for (target.date in c(9478, 9508, 9538, 9568)) {
+    load(file.path(data.dir, sprintf("recent.%s.wayback.RData", target.date)))
+    dt.recent <- dt
+    for (y.tag in c("cc", "fx", "ln", "wm")) {
+        # label data----
+        y.date <- get(sprintf("y.%s", y.tag))
+        y <- y.date[date==target.date, .(CUST_NO, Y)]
+        dt.raw <- y[dt.recent, on = 'CUST_NO']
+        # dt.raw[, .N, by=Y]
+        dt.raw[is.na(Y), Y:=0]
+        dt <- dt.raw[, -c("CUST_NO", "date")]
+        y <- dt$Y
+        x <- sparsify(dt[, -c("Y")], sparsifyNAs = T)
+        out.fnm <- file.path(data.dir, "processed", sprintf("dt_%s_x_%s_%s_%s",target.date,feature.tag, y.tag, in.fnm))
+        out.fnm1 <- file.path(data.dir, "intermediates", sprintf("dt.raw_%s_x_%s_%s_%s",target.date,feature.tag, y.tag, in.fnm))
+        # output file
+        y <- dt$Y
+        obj <- list(x=x, y=y)
+        stop()
+        save(obj, file=out.fnm)
+        save(dt.raw, file=out.fnm1)
+        cat(sprintf("feature:%s_y:%s_intvl:%s_done\n",feature.tag, y.tag, in.fnm))
+    }
+}    
